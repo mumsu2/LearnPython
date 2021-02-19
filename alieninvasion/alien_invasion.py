@@ -69,6 +69,28 @@ class AlienInvasion:
                 self._check_keydown_events(event)
             elif event.type == pygame.KEYUP:
                 self._check_keyup_events(event)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                self._check_play_button(mouse_pos)
+
+
+    def _check_play_button(self, mouse_pos):
+        """플레이어가 플레이를 클릭하면 새 게임을 시작함"""
+        button_clicked = self.play_button.rect.collidepoint(mouse_pos)
+        if button_clicked and not self.stats.game_active:
+            # 게임 기록 리셋
+            self.stats.reset_stats()
+
+            # 남아있는 외계인과 탄환 제거
+            self.aliens.empty()
+            self.bullets.empty()
+
+            # 새 함대를 만들고 우주선을 배치
+            self._create_fleet()
+            self.ship.center_ship()
+
+            # 마우스 커서 숨김
+            pygame.mouse.set_visible(False)
 
 
     def _check_keydown_events(self, event):
@@ -180,6 +202,7 @@ class AlienInvasion:
             sleep(0.5)
         else:
             self.stats.game_active = False
+            pygame.mouse.set_visible(True)
 
 
     def _check_aliens_bottom(self):
