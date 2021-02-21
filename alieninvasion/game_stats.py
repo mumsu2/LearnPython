@@ -12,3 +12,4 @@ class GameStats:
     def reset_stats(self):
         """게임을 진행하는 동안 바뀔 수 있는 기록 초기화"""
         self.ships_left = self.settings.ship_limit
+        self.score = 0

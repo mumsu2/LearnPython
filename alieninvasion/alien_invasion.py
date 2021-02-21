@@ -5,6 +5,7 @@ import pygame
 
 from settings import Settings
 from game_stats import GameStats
+from scoreboard import Scoreboard
 from ship import Ship
 from bullet import Bullet
 from alien import Alien
@@ -27,8 +28,9 @@ class AlienInvasion:
         # self.settings.screen_height = self.screen.get_rect().height
         pygame.display.set_caption("Alien Invasion")
 
-        # 게임 기록을 저장할 인스턴스를 만듦
+        # 게임 기록을 저장하고 점수판을 만들 인스턴스를 생성
         self.stats = GameStats(self)
+        self.sb = Scoreboard(self)
 
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
@@ -78,8 +80,13 @@ class AlienInvasion:
         """플레이어가 플레이를 클릭하면 새 게임을 시작함"""
         button_clicked = self.play_button.rect.collidepoint(mouse_pos)
         if button_clicked and not self.stats.game_active:
+            # 게임 세팅 리셋
+            self.settings.initialize_dynamic_settings()
+
             # 게임 기록 리셋
             self.stats.reset_stats()
+            self.stats.game_active = True
+            self.sb.prep_score()
 
             # 남아있는 외계인과 탄환 제거
             self.aliens.empty()
@@ -136,10 +143,18 @@ class AlienInvasion:
         """탄환과 외계인의 충돌에 반응"""
         # 충돌한 탄환과 외계인 제거
         collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+
+        if collisions:
+            for aliens in collisions.values():
+                self.stats.score += self.settings.alien_points * len(aliens)
+            self.sb.prep_score()
+
+
         if not self.aliens:
             # 남아있는 탄환을 파괴하고 새 함대를 만듦
             self.bullets.empty()
             self._create_fleet()
+            self.settings.increase_speed()
 
 
     def _create_fleet(self):
@@ -178,11 +193,13 @@ class AlienInvasion:
                 self._change_fleet_direction()
                 break
 
+
     def _change_fleet_direction(self):
         """함대 전체를 아래로 내리고 방향을 바꿈"""
         for alien in self.aliens.sprites():
             alien.rect.y += self.settings.fleet_drop_speed
         self.settings.fleet_direction *= -1
+
 
     def _ship_hit(self):
         """우주선이 외계인과 충돌했을때 반응"""
@@ -234,6 +251,9 @@ class AlienInvasion:
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
+
+        # 점수 정보를 그림
+        self.sb.show_score()
 
         # 게임이 비활성 상태이면 플레이 버튼을 그림
         if not self.stats.game_active:
